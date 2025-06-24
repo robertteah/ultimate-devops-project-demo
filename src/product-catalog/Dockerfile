@@ -1,6 +1,6 @@
 FROM golang:1.22-alpine AS builder
 
-WORKDIR /src/
+WORKDIR /usr/src/app/
 
 # Use Go build cache for dependencies
 RUN --mount=type=cache,target=/go/pkg/mod \
@@ -22,10 +22,10 @@ RUN go build -o product-catalog .
 
 FROM alpine AS release
 
-WORKDIR /src/
+WORKDIR /usr/src/app/
 
 COPY ./products/ ./products/
-COPY --from=builder /src/product-catalog/ ./
+COPY --from=builder /usr/src/app/product-catalog/ ./
 
 ENV PRODUCT_CATALOG_PORT=8088
 ENTRYPOINT [ "./product-catalog" ]
