@@ -38,11 +38,6 @@ jobs:
           uses: actions/checkout@v4
 
         - name: Run golangci-lint
-          uses: golangci/golangci-lint-action@v6
-          with:
-            version: v1.55.2
-            run: golangci-lint run
-            working-directory: src/product-catalog
           run: |
                 go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
                 golangci-lint run src/product-catalog/...
@@ -82,28 +77,6 @@ jobs:
         - name: Checkout code
           uses: actions/checkout@v4
           with:
-<<<<<<< HEAD
-            token: ${{ secrets.HUB_TOKEN }}
-
-        - name: Update tag in kubernetes deployment manifest
-          run: | 
-               sed -i "s|image: .*|image: ${{ secrets.DOCKER_USERNAME }}/product-catalog:${{github.run_id}}|" kubernetes/productcatalog/deploy.yaml
-        
-        - name: Commit and push changes
-          run: |
-            git config --global user.email "abhishek@gmail.com"
-            git config --global user.name "Abhishek Veeramalla"
-            git add kubernetes/productcatalog/deploy.yaml
-            git commit -m "[CI]: Update product catalog image tag"
-            git push origin HEAD:main -f
-
-        
-        
-          
-
-
-        
-=======
             token: ${{ secrets.GITHUB_TOKEN }}        
         
         - name: Update tag in Kubernetes deployment manifest
@@ -117,4 +90,3 @@ jobs:
                 git add kubernetes/productcatalog/deploy.yaml
                 git commit -m "[CI]: Update product catalog image tag to ${{ github.run_id }}"
                 git push
->>>>>>> b025f281f60d243705ac5eef0ffa2510316038c8
