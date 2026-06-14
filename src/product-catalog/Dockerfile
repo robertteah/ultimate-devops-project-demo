@@ -21,4 +21,3 @@ COPY --from=builder /go/bin/product-catalog ./
 
 ENV PRODUCT_CATALOG_PORT=8088
 ENTRYPOINT ["./product-catalog"]
-
