@@ -2,10 +2,14 @@
 
 name: product-catalog-ci
 
+
 on: 
     pull_request:
         branches:
         - main
+
+permissions:
+    contents: write
 
 jobs:
     build:
@@ -86,7 +90,7 @@ jobs:
         - name: checkout code
           uses: actions/checkout@v4
           with:
-            token: ${{ secrets.GITHUB_TOKEN }}
+            token: ${{ github.token }}
 
         - name: Update tag in kubernetes deployment manifest
           run: | 
