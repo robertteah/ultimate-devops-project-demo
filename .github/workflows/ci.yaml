@@ -49,7 +49,7 @@ jobs:
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v6
         with:
-          version: v1.64.8
+          version: v1.65.0
           working-directory: src/product-catalog
           args: ./...
 
@@ -68,13 +68,14 @@ jobs:
 
       - name: Configure AWS credentials (Floci)
         uses: aws-actions/configure-aws-credentials@v4
+        env:
+          AWS_ENDPOINT_URL: ${{ secrets.AWS_ENDPOINT_URL }}
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
           role-to-assume: arn:aws:iam::000000000000:role/github-actions-role
           role-chaining: true
-          aws-endpoint-url-sts: ${{ env.AWS_ENDPOINT_URL }}
 
       - name: Login to Floci ECR
         run: |
@@ -117,7 +118,7 @@ jobs:
       - name: Trivy vulnerability scan
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ env.IMAGE_URI }}
+          image-ref: ghcr.io/open-telemetry/demo:2.2.0-product-catalog
           format: table
           exit-code: '1'
           severity: CRITICAL,HIGH
