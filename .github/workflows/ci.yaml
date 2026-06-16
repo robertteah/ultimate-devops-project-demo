@@ -16,7 +16,7 @@ jobs:
     runs-on: self-hosted
 
     outputs:
-      image-uri: ${{ steps.set-image-uri.outputs.image-uri }}
+      image-tag: ${{ steps.set-image-uri.outputs.image-tag }}
 
     env:
       AWS_ENDPOINT_URL: ${{ secrets.AWS_ENDPOINT_URL }}
@@ -45,11 +45,12 @@ jobs:
             --endpoint-url "$AWS_ENDPOINT_URL" || true
 
       - name: Set image URI
-        id: set-image-uri
+        id: set-image-tag
         run: |
-          IMAGE_URI="$FLOCI_ECR_REGISTRY/$FLOCI_ECR_REPOSITORY:${{ github.run_id }}"
+          RUN_ID="${{ github.run_id }}"
+          IMAGE_URI="$FLOCI_ECR_REGISTRY/$FLOCI_ECR_REPOSITORY:$RUN_ID"
           echo "IMAGE_URI=$IMAGE_URI" >> "$GITHUB_ENV"
-          echo "image-tag=${{ github.run.id }}" >> "$GITHUB_OUTPUT"
+          echo "image-tag=$RUN_ID" >> "$GITHUB_OUTPUT"
 
       - name: Pull upstream image for scanning
         run: docker pull ghcr.io/open-telemetry/demo:2.2.0-product-catalog
