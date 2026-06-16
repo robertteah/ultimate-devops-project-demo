@@ -1,4 +1,3 @@
-# Updating for ci test
 name: product-catalog-ci
 
 on:
@@ -50,7 +49,7 @@ jobs:
         run: |
           IMAGE_URI="$FLOCI_ECR_REGISTRY/$FLOCI_ECR_REPOSITORY:${{ github.run_id }}"
           echo "IMAGE_URI=$IMAGE_URI" >> "$GITHUB_ENV"
-          echo "image-uri=$IMAGE_URI" >> "$GITHUB_OUTPUT"
+          echo "image-tag=${{ github.run.id }}" >> "$GITHUB_OUTPUT"
 
       - name: Pull upstream image for scanning
         run: docker pull ghcr.io/open-telemetry/demo:2.2.0-product-catalog
@@ -108,7 +107,7 @@ jobs:
       - name: Update tag in Kubernetes deployment manifest
         run: |
           IMAGE_URI="$FLOCI_ECR_REGISTRY/$FLOCI_ECR_REPOSITORY:${{ needs.docker.outputs.image-tag }}"
-          sed -i "s|image: .*productcatalog.*|image:  $IMAGE_URI|" \
+          sed -i "s|image: .*productcatalog.*|image: $IMAGE_URI|" \
             kubernetes/productcatalog/deploy.yaml
 
       - name: Commit and push changes
