@@ -94,6 +94,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: docker
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    env:
+      FLOCI_ECR_REGISTRY: ${{ secrets.FLOCI_ECR_REGISTRY }}
+      FLOCI_ECR_REPOSITORY: ${{ secrets.FLOCI_ECR_REPOSITORY }}
 
     steps:
       - name: Checkout code
@@ -103,7 +106,8 @@ jobs:
 
       - name: Update tag in Kubernetes deployment manifest
         run: |
-          sed -i "s|image: .*productcatalog.*|image: ${{ needs.docker.outputs.image-uri }}|" \
+          IMAGE_URI="$FLOCI_ECR_REGISTRY/$FLOCI_ECR_REPOSITORY:${{ needs.docker.outputs.image-tag }}"
+          sed -i "s|image: .*productcatalog.*|image:  $IMAGE_URI|" \
             kubernetes/productcatalog/deploy.yaml
 
       - name: Commit and push changes
