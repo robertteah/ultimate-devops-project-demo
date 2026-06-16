@@ -28,7 +28,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Login to Floci ECR
         run: |
@@ -51,10 +51,13 @@ jobs:
           echo "IMAGE_URI=$IMAGE_URI" >> "$GITHUB_ENV"
           echo "image-uri=$IMAGE_URI" >> "$GITHUB_OUTPUT"
 
+      - name: Pull upstream image for scanning
+        run: docker pull ghcr.io/open-telemetry/demo:2.2.0-product-catalog
+
       - name: Trivy vulnerability scan
         uses: aquasecurity/trivy-action@0.35.0
         with:
-          image-ref: ghcr.io/open-telemetry/demo:2.2.0-productcatalogservice
+          image-ref: ghcr.io/open-telemetry/demo:2.2.0-product-catalog
           format: table
           exit-code: '1'
           severity: CRITICAL,HIGH
@@ -82,7 +85,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
