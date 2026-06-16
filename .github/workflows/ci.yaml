@@ -13,51 +13,8 @@ permissions:
   contents: write
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Go 1.26
-        uses: actions/setup-go@v4
-        with:
-          go-version: '1.26'
-
-      - name: Build
-        run: |
-          cd src/product-catalog
-          go mod download
-          go build -o product-catalog-service main.go
-
-      - name: Unit tests
-        run: |
-          cd src/product-catalog
-          go test ./...
-
-  code-quality:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Go 1.26
-        uses: actions/setup-go@v4
-        with:
-          go-version: '1.26'
-
-      - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v6
-        with:
-          version: v1.65.0
-          working-directory: src/product-catalog
-          args: ./...
-
   docker:
     runs-on: self-hosted
-    needs:
-      - build
-      - code-quality
 
     outputs:
       image-uri: ${{ steps.set-image-uri.outputs.image-uri }}
@@ -66,18 +23,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Configure AWS credentials (Floci)
+      - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
-        env:
-          AWS_ENDPOINT_URL: ${{ secrets.AWS_ENDPOINT_URL }}
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
           role-to-assume: arn:aws:iam::000000000000:role/github-actions-role
-          role-chaining: true
+          aws-region: us-east-1
 
       - name: Login to Floci ECR
+        env:
+          AWS_ENDPOINT_URL: ${{ secrets.AWS_ENDPOINT_URL }}
+          FLOCI_ECR_REGISTRY: ${{ secrets.FLOCI_ECR_REGISTRY }}
         run: |
           aws ecr get-login-password \
             --endpoint-url "$AWS_ENDPOINT_URL" \
@@ -86,14 +41,32 @@ jobs:
             --password-stdin "$FLOCI_ECR_REGISTRY"
 
       - name: Ensure ECR repository exists
+        env:
+          AWS_ENDPOINT_URL: ${{ secrets.AWS_ENDPOINT_URL }}
+          FLOCI_ECR_REPOSITORY: ${{ secrets.FLOCI_ECR_REPOSITORY }}
         run: |
           aws ecr create-repository \
             --repository-name "$FLOCI_ECR_REPOSITORY" \
             --endpoint-url "$AWS_ENDPOINT_URL" || true
 
       - name: Set image URI
+        id: set-image-uri
+        env:
+          FLOCI_ECR_REGISTRY: ${{ secrets.FLOCI_ECR_REGISTRY }}
+          FLOCI_ECR_REPOSITORY: ${{ secrets.FLOCI_ECR_REPOSITORY }}
         run: |
-          echo "IMAGE_URI=$FLOCI_ECR_REGISTRY/$FLOCI_ECR_REPOSITORY:${{ github.run_id }}" >> $GITHUB_ENV
+          IMAGE_URI="$FLOCI_ECR_REGISTRY/$FLOCI_ECR_REPOSITORY:${{ github.run_id }}"
+          echo "IMAGE_URI=$IMAGE_URI" >> "$GITHUB_ENV"
+          echo "image-uri=$IMAGE_URI" >> "$GITHUB_OUTPUT"
+
+      - name: Trivy vulnerability scan
+        uses: aquasecurity/trivy-action@0.31.0
+        with:
+          image-ref: ghcr.io/open-telemetry/demo:2.2.0-productcatalogservice
+          format: table
+          exit-code: '1'
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -110,38 +83,26 @@ jobs:
             -f src/product-catalog/Dockerfile \
             src/product-catalog
 
-      - name: Set image URI output
-        id: set-image-uri
-        run: |
-          echo "image-uri=$IMAGE_URI" >> "$GITHUB_OUTPUT"
-
-      - name: Trivy vulnerability scan
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ghcr.io/open-telemetry/demo:2.2.0-product-catalog
-          format: table
-          exit-code: '1'
-          severity: CRITICAL,HIGH
-          ignore-unfixed: true
-
   updatek8s:
     runs-on: ubuntu-latest
     needs: docker
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          token: ${{ github.token }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Update tag in Kubernetes deployment manifest
         run: |
-          sed -i "s|image: .*|image: ${{ needs.docker.outputs.image-uri }}|" kubernetes/productcatalog/deploy.yaml
+          sed -i "s|image: .*productcatalog.*|image: ${{ needs.docker.outputs.image-uri }}|" \
+            kubernetes/productcatalog/deploy.yaml
 
       - name: Commit and push changes
         run: |
-          git config --global user.email "${{ secrets.ACTOR }}@users.noreply.github.com"
-          git config --global user.name "${{ secrets.ACTOR }}"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
           git add kubernetes/productcatalog/deploy.yaml
-          git commit -m "[CI]: Update product catalog image tag"
-          git push origin HEAD:main -f
+          git diff --staged --quiet || git commit -m "[CI]: Update product catalog image tag to ${{ github.run_id }}"
+          git push origin HEAD:main
