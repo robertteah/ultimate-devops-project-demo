@@ -9,7 +9,6 @@ on:
       - main
 
 permissions:
-  id-token: write
   contents: write
 
 jobs:
@@ -19,20 +18,19 @@ jobs:
     outputs:
       image-uri: ${{ steps.set-image-uri.outputs.image-uri }}
 
+    env:
+      AWS_ENDPOINT_URL: ${{ secrets.AWS_ENDPOINT_URL }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: us-east-1
+      FLOCI_ECR_REGISTRY: ${{ secrets.FLOCI_ECR_REGISTRY }}
+      FLOCI_ECR_REPOSITORY: ${{ secrets.FLOCI_ECR_REPOSITORY }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::000000000000:role/github-actions-role
-          aws-region: us-east-1
-
       - name: Login to Floci ECR
-        env:
-          AWS_ENDPOINT_URL: ${{ secrets.AWS_ENDPOINT_URL }}
-          FLOCI_ECR_REGISTRY: ${{ secrets.FLOCI_ECR_REGISTRY }}
         run: |
           aws ecr get-login-password \
             --endpoint-url "$AWS_ENDPOINT_URL" \
@@ -41,9 +39,6 @@ jobs:
             --password-stdin "$FLOCI_ECR_REGISTRY"
 
       - name: Ensure ECR repository exists
-        env:
-          AWS_ENDPOINT_URL: ${{ secrets.AWS_ENDPOINT_URL }}
-          FLOCI_ECR_REPOSITORY: ${{ secrets.FLOCI_ECR_REPOSITORY }}
         run: |
           aws ecr create-repository \
             --repository-name "$FLOCI_ECR_REPOSITORY" \
@@ -51,16 +46,13 @@ jobs:
 
       - name: Set image URI
         id: set-image-uri
-        env:
-          FLOCI_ECR_REGISTRY: ${{ secrets.FLOCI_ECR_REGISTRY }}
-          FLOCI_ECR_REPOSITORY: ${{ secrets.FLOCI_ECR_REPOSITORY }}
         run: |
           IMAGE_URI="$FLOCI_ECR_REGISTRY/$FLOCI_ECR_REPOSITORY:${{ github.run_id }}"
           echo "IMAGE_URI=$IMAGE_URI" >> "$GITHUB_ENV"
           echo "image-uri=$IMAGE_URI" >> "$GITHUB_OUTPUT"
 
       - name: Trivy vulnerability scan
-        uses: aquasecurity/trivy-action@v0.35.0
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           image-ref: ghcr.io/open-telemetry/demo:2.2.0-productcatalogservice
           format: table
