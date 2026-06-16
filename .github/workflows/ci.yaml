@@ -72,14 +72,22 @@ jobs:
           [registry."host.docker.internal:5100"]
             http = true
             insecure = true
+<<<<<<< HEAD
           EOF
 
           cat /tmp/buildkitd.toml
+=======
+          EOF     
+>>>>>>> refs/remotes/origin/githubchecks
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
         with:
+<<<<<<< HEAD
           config: /tmp/buildkitd.toml
+=======
+          buildkitd-config: /tmp/buildkitd.toml
+>>>>>>> refs/remotes/origin/githubchecks
 
       - name: Build and push to Floci ECR
         run: |
