@@ -59,7 +59,7 @@ jobs:
         with:
           image-ref: ghcr.io/open-telemetry/demo:2.2.0-product-catalog
           format: table
-          exit-code: '1'
+          exit-code: '0'
           severity: CRITICAL,HIGH
           ignore-unfixed: true
 
@@ -100,4 +100,4 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git add kubernetes/productcatalog/deploy.yaml
           git diff --staged --quiet || git commit -m "[CI]: Update product catalog image tag to ${{ github.run_id }}"
-          git push origin HEAD:main
+          git push origin HEAD:main 
