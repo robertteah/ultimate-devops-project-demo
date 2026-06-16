@@ -60,7 +60,7 @@ jobs:
           echo "image-uri=$IMAGE_URI" >> "$GITHUB_OUTPUT"
 
       - name: Trivy vulnerability scan
-        uses: aquasecurity/trivy-action@0.31.0
+        uses: aquasecurity/trivy-action@v0.35.0
         with:
           image-ref: ghcr.io/open-telemetry/demo:2.2.0-productcatalogservice
           format: table
