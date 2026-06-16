@@ -40,8 +40,19 @@ spec:
           imagePullPolicy: IfNotPresent
           ports:
             
-            - containerPort: 8080
-              name: service
+          livenessProbe:
+            grpc:
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            grpc:
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 3
+
           env:
             - name: OTEL_SERVICE_NAME
               valueFrom:

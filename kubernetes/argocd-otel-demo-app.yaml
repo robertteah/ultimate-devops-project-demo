@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: productcatalog-service
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/robertteah/ultimate-devops-project-demo.git
+    targetRevision: HEAD
+    path: kubernetes/productcatalog
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: otel-demo
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    retry:
+      limit: 3
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 5m
+    syncOptions:
+      - CreateNamespace=true
