@@ -1,0 +1,21 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Federated": "arn:aws:iam::000000000000.dkr.ecr.us-east-1.localhost:5000:oidc-provider/://githubusercontent.com"
+      },
+      "Action": "sts:AssumeRoleWithWebIdentity",
+      "Condition": {
+        "StringEquals": {
+          "://githubusercontent.com:aud": "://amazonaws.com"
+        },
+        "StringLike": {
+          "://githubusercontent.com:sub": "repo:000000000000.dkr.ecr.us-east-1.localhost:5000:*"
+        }
+      }
+    }
+  ]
+}
+
