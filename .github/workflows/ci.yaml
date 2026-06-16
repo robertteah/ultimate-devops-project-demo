@@ -77,7 +77,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
         with:
-          buildkitd-config: /tmp/buildkitd.toml
+          config: /tmp/buildkitd.toml
 
       - name: Build and push to Floci ECR
         run: |
