@@ -65,9 +65,19 @@ jobs:
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
+      
+      - name: Configure BuildKit insecure registry
+        run: |
+          cat > /tmp/buildkitd.toml <<'EOF'
+          [registry."host.docker.internal:5100"]
+            http = true
+            insecure = true
+          EOF     
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+        with:
+          buildkitd-config: /tmp/buildkitd.toml
 
       - name: Build and push to Floci ECR
         run: |
